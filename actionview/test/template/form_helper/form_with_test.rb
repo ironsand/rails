@@ -14,16 +14,6 @@ class FormWithTest < ActionView::TestCase
   teardown do
     ActionView::Helpers::FormHelper.form_with_generates_ids = @old_value
   end
-
-  private
-    def with_default_enforce_utf8(value)
-      old_value = ActionView::Helpers::FormTagHelper.default_enforce_utf8
-      ActionView::Helpers::FormTagHelper.default_enforce_utf8 = value
-
-      yield
-    ensure
-      ActionView::Helpers::FormTagHelper.default_enforce_utf8 = old_value
-    end
 end
 
 class FormWithActsLikeFormTagTest < FormWithTest
@@ -35,13 +25,8 @@ class FormWithActsLikeFormTagTest < FormWithTest
 
   def hidden_fields(options = {})
     method = options[:method]
-    skip_enforcing_utf8 = options.fetch(:skip_enforcing_utf8, false)
 
     (+"").tap do |txt|
-      unless skip_enforcing_utf8
-        txt << %{<input name="utf8" type="hidden" value="&#x2713;" autocomplete="off" />}
-      end
-
       if method && !%w(get post).include?(method.to_s)
         txt << %{<input name="_method" type="hidden" value="#{method}" autocomplete="off" />}
       end
@@ -128,31 +113,6 @@ class FormWithActsLikeFormTagTest < FormWithTest
 
     expected = whole_form("http://www.example.com", local: true)
     assert_dom_equal expected, actual
-  end
-
-  def test_form_with_skip_enforcing_utf8_true
-    actual = form_with(skip_enforcing_utf8: true)
-    expected = whole_form("http://www.example.com", skip_enforcing_utf8: true)
-    assert_dom_equal expected, actual
-    assert_predicate actual, :html_safe?
-  end
-
-  def test_form_with_default_enforce_utf8_false
-    with_default_enforce_utf8 false do
-      actual = form_with
-      expected = whole_form("http://www.example.com", skip_enforcing_utf8: true)
-      assert_dom_equal expected, actual
-      assert_predicate actual, :html_safe?
-    end
-  end
-
-  def test_form_with_default_enforce_utf8_true
-    with_default_enforce_utf8 true do
-      actual = form_with
-      expected = whole_form("http://www.example.com", skip_enforcing_utf8: false)
-      assert_dom_equal expected, actual
-      assert_predicate actual, :html_safe?
-    end
   end
 
   def test_form_with_with_block_in_erb
@@ -896,58 +856,6 @@ class FormWithActsLikeFormForTest < FormWithTest
     assert_dom_equal expected, @rendered
   ensure
     ActionView::Helpers::FormHelper.form_with_generates_remote_forms = old_value
-  end
-
-  def test_form_with_skip_enforcing_utf8_true
-    form_with(scope: :post, skip_enforcing_utf8: true) do |f|
-      concat f.text_field(:title)
-    end
-
-    expected = whole_form("/", skip_enforcing_utf8: true) do
-      "<input name='post[title]' type='text' value='Hello World' id='post_title' />"
-    end
-
-    assert_dom_equal expected, @rendered
-  end
-
-  def test_form_with_skip_enforcing_utf8_false
-    form_with(scope: :post, skip_enforcing_utf8: false) do |f|
-      concat f.text_field(:title)
-    end
-
-    expected = whole_form("/", skip_enforcing_utf8: false) do
-      "<input name='post[title]' type='text' value='Hello World' id='post_title' />"
-    end
-
-    assert_dom_equal expected, @rendered
-  end
-
-  def test_form_with_default_enforce_utf8_true
-    with_default_enforce_utf8 true do
-      form_with(scope: :post) do |f|
-        concat f.text_field(:title)
-      end
-
-      expected = whole_form("/", skip_enforcing_utf8: false) do
-        "<input name='post[title]' type='text' value='Hello World' id='post_title' />"
-      end
-
-      assert_dom_equal expected, @rendered
-    end
-  end
-
-  def test_form_with_default_enforce_utf8_false
-    with_default_enforce_utf8 false do
-      form_with(scope: :post) do |f|
-        concat f.text_field(:title)
-      end
-
-      expected = whole_form("/", skip_enforcing_utf8: true) do
-        "<input name='post[title]' type='text' value='Hello World' id='post_title' />"
-      end
-
-      assert_dom_equal expected, @rendered
-    end
   end
 
   def test_form_with_without_object
@@ -2502,11 +2410,7 @@ class FormWithActsLikeFormForTest < FormWithTest
     def hidden_fields(options = {})
       method = options[:method]
 
-      if options.fetch(:skip_enforcing_utf8, false)
-        txt = +""
-      else
-        txt = +%{<input name="utf8" type="hidden" value="&#x2713;" autocomplete="off" />}
-      end
+      txt = +""
 
       if method && !%w(get post).include?(method.to_s)
         txt << %{<input name="_method" type="hidden" value="#{method}" autocomplete="off" />}
@@ -2530,7 +2434,7 @@ class FormWithActsLikeFormForTest < FormWithTest
 
       method, multipart = options.values_at(:method, :multipart)
 
-      form_text(action, id, html_class, local, multipart, method) + hidden_fields(options.slice :method, :skip_enforcing_utf8) + contents + "</form>"
+      form_text(action, id, html_class, local, multipart, method) + hidden_fields(options.slice :method) + contents + "</form>"
     end
 
     def protect_against_forgery?

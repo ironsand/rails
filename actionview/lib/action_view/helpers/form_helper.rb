@@ -188,8 +188,6 @@ module ActionView
       #   unnecessary unless you support browsers without JavaScript.
       # * <tt>:remote</tt> - If set to true, will allow the Unobtrusive
       #   JavaScript drivers to control the submit behavior.
-      # * <tt>:enforce_utf8</tt> - If set to false, a hidden input with name
-      #   utf8 is not output.
       # * <tt>:html</tt> - Optional HTML attributes for the form tag.
       #
       # Also note that +form_for+ doesn't create an exclusive scope. It's still
@@ -627,8 +625,6 @@ module ActionView
       #   (which has the equivalent effect of passing <tt>local: true</tt>).
       #   In previous versions of \Rails, that configuration option defaults to
       #   <tt>true</tt> (the equivalent of passing <tt>local: false</tt>).
-      # * <tt>:skip_enforcing_utf8</tt> - If set to true, a hidden input with name
-      #   utf8 is not output.
       # * <tt>:builder</tt> - Override the object used to build the form.
       # * <tt>:id</tt> - Optional HTML id attribute.
       # * <tt>:class</tt> - Optional HTML class attribute.
@@ -1591,18 +1587,10 @@ module ActionView
       end
 
       private
-        def html_options_for_form_with(url_for_options = nil, model = nil, html: {}, local: !form_with_generates_remote_forms,
-          skip_enforcing_utf8: nil, **options)
+        def html_options_for_form_with(url_for_options = nil, model = nil, html: {}, local: !form_with_generates_remote_forms, **options)
           html_options = options.slice(:id, :class, :multipart, :method, :data, :authenticity_token).merge!(html)
           html_options[:remote] = html.delete(:remote) || !local
           html_options[:method] ||= :patch if model.respond_to?(:persisted?) && model.persisted?
-          if skip_enforcing_utf8.nil?
-            if options.key?(:enforce_utf8)
-              html_options[:enforce_utf8] = options[:enforce_utf8]
-            end
-          else
-            html_options[:enforce_utf8] = !skip_enforcing_utf8
-          end
           html_options_for_form(url_for_options.nil? ? {} : url_for_options, html_options)
         end
 

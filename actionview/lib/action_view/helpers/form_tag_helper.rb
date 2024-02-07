@@ -26,7 +26,6 @@ module ActionView
       mattr_accessor :embed_authenticity_token_in_remote_forms
       self.embed_authenticity_token_in_remote_forms = nil
 
-      mattr_accessor :default_enforce_utf8, default: true
 
       # Starts a form tag that points the action to a URL configured with <tt>url_for_options</tt> just like
       # ActionController::Base#url_for. The method for the form defaults to POST.
@@ -45,7 +44,6 @@ module ActionView
       #   support browsers without JavaScript.
       # * <tt>:remote</tt> - If set to true, will allow the Unobtrusive JavaScript drivers to control the
       #   submit behavior. By default this behavior is an ajax submit.
-      # * <tt>:enforce_utf8</tt> - If set to false, a hidden input with name utf8 is not output.
       # * Any other key creates standard HTML attributes for the tag.
       #
       # ==== Examples
@@ -901,15 +899,6 @@ module ActionView
         number_field_tag(name, value, options.merge(type: :range))
       end
 
-      # Creates the hidden UTF-8 enforcer tag. Override this method in a helper
-      # to customize the tag.
-      def utf8_enforcer_tag
-        # Use raw HTML to ensure the value is written as an HTML entity; it
-        # needs to be the right character regardless of which encoding the
-        # browser infers.
-        '<input name="utf8" type="hidden" value="&#x2713;" autocomplete="off" />'.html_safe
-      end
-
       private
         def html_options_for_form(url_for_options, options)
           options.stringify_keys.tap do |html_options|
@@ -942,29 +931,22 @@ module ActionView
           authenticity_token = html_options.delete("authenticity_token")
           method = html_options.delete("method").to_s.downcase
 
-          method_tag = \
-            case method
-            when "get"
-              html_options["method"] = "get"
-              ""
-            when "post", ""
-              html_options["method"] = "post"
-              token_tag(authenticity_token, form_options: {
-                action: html_options["action"],
-                method: "post"
-              })
-            else
-              html_options["method"] = "post"
-              method_tag(method) + token_tag(authenticity_token, form_options: {
-                action: html_options["action"],
-                method: method
-              })
-            end
-
-          if html_options.delete("enforce_utf8") { default_enforce_utf8 }
-            utf8_enforcer_tag + method_tag
+          case method
+          when "get"
+            html_options["method"] = "get"
+            ""
+          when "post", ""
+            html_options["method"] = "post"
+            token_tag(authenticity_token, form_options: {
+              action: html_options["action"],
+              method: "post"
+            })
           else
-            method_tag
+            html_options["method"] = "post"
+            method_tag(method) + token_tag(authenticity_token, form_options: {
+              action: html_options["action"],
+              method: method
+            })
           end
         end
 

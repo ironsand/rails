@@ -9,7 +9,6 @@ module ActionView
     config.action_view = ActiveSupport::OrderedOptions.new
     config.action_view.embed_authenticity_token_in_remote_forms = nil
     config.action_view.debug_missing_translation = true
-    config.action_view.default_enforce_utf8 = nil
     config.action_view.image_loading = nil
     config.action_view.image_decoding = nil
     config.action_view.apply_stylesheet_media_default = true
@@ -31,13 +30,6 @@ module ActionView
       form_with_generates_ids = app.config.action_view.delete(:form_with_generates_ids)
       unless form_with_generates_ids.nil?
         ActionView::Helpers::FormHelper.form_with_generates_ids = form_with_generates_ids
-      end
-    end
-
-    config.after_initialize do |app|
-      default_enforce_utf8 = app.config.action_view.delete(:default_enforce_utf8)
-      unless default_enforce_utf8.nil?
-        ActionView::Helpers::FormTagHelper.default_enforce_utf8 = default_enforce_utf8
       end
     end
 
